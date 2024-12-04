@@ -30,6 +30,14 @@ function createTaskElement(taskText) {
   const span = document.createElement('span');
   span.textContent = taskText;
 
+  const editButton = document.createElement('button');
+  editButton.textContent = '✏️';
+  editButton.className = 'edit-button';
+  editButton.addEventListener('click', () => {
+    editTask(span);
+    saveTasks(); // Save tasks after editing
+  });
+
   const deleteButton = document.createElement('button');
   deleteButton.textContent = '❌';
   deleteButton.className = 'delete-button';
@@ -40,9 +48,17 @@ function createTaskElement(taskText) {
 
   li.appendChild(checkbox);
   li.appendChild(span);
+  li.appendChild(editButton);
   li.appendChild(deleteButton);
 
   return li;
+}
+
+function editTask(span) {
+  const newText = prompt('Edit your task:', span.textContent);
+  if (newText !== null) {
+    span.textContent = newText;
+  }
 }
 
 function toggleTaskComplete(task) {
@@ -76,6 +92,3 @@ function loadTasks() {
 
 // Call loadTasks when the page loads
 window.onload = loadTasks;
-
-// Save tasks every time a new task is added or deleted
-addTaskButton.addEventListener('click', saveTasks);

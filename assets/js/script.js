@@ -1,41 +1,71 @@
-// Select DOM elements
 const taskInput = document.getElementById('taskInput');
+const prioritySelect = document.getElementById('prioritySelect');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskList = document.getElementById('taskList');
+const highPriorityList = document.getElementById('highPriorityList');
+const completedTaskList = document.getElementById('completedTaskList');
+const priorityButtons = document.querySelectorAll('.priority-btn');
 
-// Add Task
+let selectedTask = null;
+
 addTaskButton.addEventListener('click', () => {
   const taskText = taskInput.value.trim();
+  const priority = prioritySelect.value;
   if (taskText === '') return;
 
-  const taskItem = createTaskElement(taskText);
-  taskList.appendChild(taskItem);
+  const taskItem = createTaskElement(taskText, priority);
+  if (priority === 'high') {
+    highPriorityList.appendChild(taskItem);
+  } else {
+    taskList.appendChild(taskItem);
+  }
 
-  taskInput.value = ''; // Clear input
-  saveTasks(); // Save tasks after adding a new one
+  taskInput.value = '';
+  saveTasks();
 });
 
-function createTaskElement(taskText) {
-  const li = document.createElement('li');
-  li.className = 'task';
+priorityButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    if (selectedTask) {
+      const newPriority = button.getAttribute('data-priority');
+      updateTaskPriority(selectedTask, newPriority);
+      saveTasks();
+    } else {
+      alert('Please select a task to change its priority.');
+    }
+  });
+});
 
+function createTaskElement(taskText, priority) {
+  const li = document.createElement('li');
+  li.className = `task priority-${priority}`;
+
+  // Checkbox for marking task as complete
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.className = 'task-checkbox';
   checkbox.addEventListener('click', () => {
     toggleTaskComplete(li);
-    saveTasks(); // Save tasks after toggling completion
+    saveTasks();
   });
 
   const span = document.createElement('span');
   span.textContent = taskText;
+
+  li.addEventListener('click', () => {
+    if (selectedTask) {
+      selectedTask.classList.remove('selected');
+    }
+    selectedTask = li;
+    li.classList.add('selected');
+  });
 
   const editButton = document.createElement('button');
   editButton.textContent = '✏️';
   editButton.className = 'edit-button';
   editButton.addEventListener('click', () => {
     editTask(span);
-    saveTasks(); // Save tasks after editing
+    saveTasks();
   });
 
   const deleteButton = document.createElement('button');
@@ -43,7 +73,8 @@ function createTaskElement(taskText) {
   deleteButton.className = 'delete-button';
   deleteButton.addEventListener('click', () => {
     li.remove();
-    saveTasks(); // Save tasks after deleting
+    if (li === selectedTask) selectedTask = null;
+    saveTasks();
   });
 
   li.appendChild(checkbox);
@@ -54,6 +85,32 @@ function createTaskElement(taskText) {
   return li;
 }
 
+function updateTaskPriority(task, newPriority) {
+  task.className = `task priority-${newPriority}`;
+  if (newPriority === 'high') {
+    highPriorityList.appendChild(task);
+  } else {
+    taskList.appendChild(task);
+  }
+}
+
+function toggleTaskComplete(task) {
+  if (task.classList.contains('complete')) {
+    task.classList.remove('complete');
+    const priority = task.className.split(' ')[1].split('-')[1];
+    if (priority === 'high') {
+      highPriorityList.appendChild(task);
+    } else {
+      taskList.appendChild(task);
+    }
+  } else {
+    task.classList.add('complete');
+    task.remove();
+    completedTaskList.appendChild(task);
+    if (task === selectedTask) selectedTask = null;
+  }
+}
+
 function editTask(span) {
   const newText = prompt('Edit your task:', span.textContent);
   if (newText !== null) {
@@ -61,34 +118,34 @@ function editTask(span) {
   }
 }
 
-function toggleTaskComplete(task) {
-  task.classList.toggle('complete');
-}
-
-// Save tasks to localStorage
 function saveTasks() {
   const tasks = [];
   document.querySelectorAll('.task').forEach(task => {
     tasks.push({
       text: task.querySelector('span').textContent,
-      completed: task.classList.contains('complete')
+      completed: task.classList.contains('complete'),
+      priority: task.className.split(' ')[1].split('-')[1],
     });
   });
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Load tasks from localStorage
 function loadTasks() {
   const savedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
   savedTasks.forEach(task => {
-    const taskItem = createTaskElement(task.text);
+    const taskItem = createTaskElement(task.text, task.priority);
     if (task.completed) {
       taskItem.classList.add('complete');
       taskItem.querySelector('.task-checkbox').checked = true;
+      completedTaskList.appendChild(taskItem);
+    } else {
+      if (task.priority === 'high') {
+        highPriorityList.appendChild(taskItem);
+      } else {
+        taskList.appendChild(taskItem);
+      }
     }
-    taskList.appendChild(taskItem);
   });
 }
 
-// Call loadTasks when the page loads
 window.onload = loadTasks;

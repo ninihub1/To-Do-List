@@ -254,6 +254,33 @@ ul {
     background-color: #d0d0d0;
 }
 
+.due-date {
+    font-size: 0.9rem;
+    margin-left: 10px;
+    color: #ffab40;
+}
+
+input[type="date"] {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 16px;
+    background-color: #f9f9f9;
+    color: #333;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+}
+
+input[type="date"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    background-color: #fff;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5);
+}
 
 
 /* Footer */

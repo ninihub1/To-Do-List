@@ -1,4 +1,5 @@
 const taskInput = document.getElementById('taskInput');
+const dueDateInput = document.getElementById('dueDateInput');
 const prioritySelect = document.getElementById('prioritySelect');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskList = document.getElementById('taskList');
@@ -10,10 +11,11 @@ let selectedTask = null;
 
 addTaskButton.addEventListener('click', () => {
   const taskText = taskInput.value.trim();
+  const dueDate = dueDateInput.value;
   const priority = prioritySelect.value;
-  if (taskText === '') return;
+  if (taskText === '' || dueDate === '') return;
 
-  const taskItem = createTaskElement(taskText, priority);
+  const taskItem = createTaskElement(taskText, priority, dueDate);
   if (priority === 'high') {
     highPriorityList.appendChild(taskItem);
   } else {
@@ -21,6 +23,7 @@ addTaskButton.addEventListener('click', () => {
   }
 
   taskInput.value = '';
+  dueDateInput.value = '';
   saveTasks();
 });
 
@@ -36,11 +39,10 @@ priorityButtons.forEach(button => {
   });
 });
 
-function createTaskElement(taskText, priority) {
+function createTaskElement(taskText, priority, dueDate) {
   const li = document.createElement('li');
   li.className = `task priority-${priority}`;
 
-  // Checkbox for marking task as complete
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.className = 'task-checkbox';
@@ -50,7 +52,7 @@ function createTaskElement(taskText, priority) {
   });
 
   const span = document.createElement('span');
-  span.textContent = taskText;
+  span.textContent = `${taskText} (Due: ${dueDate})`;
 
   li.addEventListener('click', () => {
     if (selectedTask) {
@@ -64,7 +66,7 @@ function createTaskElement(taskText, priority) {
   editButton.textContent = '✏️';
   editButton.className = 'edit-button';
   editButton.addEventListener('click', () => {
-    editTask(span);
+    editTask(span, dueDate);
     saveTasks();
   });
 
@@ -111,18 +113,42 @@ function toggleTaskComplete(task) {
   }
 }
 
-function editTask(span) {
-  const newText = prompt('Edit your task:', span.textContent);
-  if (newText !== null) {
-    span.textContent = newText;
-  }
+function editTask(span, oldDueDate) {
+  const [taskText, dueDatePart] = span.textContent.split(' (Due: ');
+  
+  const newText = prompt('Edit your task:', taskText);
+  if (newText === null) return;
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.value = oldDueDate;
+  dateInput.min = new Date().toISOString().split('T')[0];
+
+  span.textContent = `${newText} (Due: `;
+  span.appendChild(dateInput);
+
+  const saveButton = document.createElement('button');
+  saveButton.textContent = 'Save';
+  saveButton.addEventListener('click', () => {
+    if (dateInput.value) {
+      const newDueDate = dateInput.value;
+      span.textContent = `${newText} (Due: ${newDueDate})`;
+      saveTasks();
+    } else {
+      alert('Please select a valid date.');
+    }
+  });
+  span.appendChild(saveButton);
 }
+
 
 function saveTasks() {
   const tasks = [];
   document.querySelectorAll('.task').forEach(task => {
+    const [text, dueDate] = task.querySelector('span').textContent.split(' (Due: ');
     tasks.push({
-      text: task.querySelector('span').textContent,
+      text,
+      dueDate: dueDate.replace(')', ''),
       completed: task.classList.contains('complete'),
       priority: task.className.split(' ')[1].split('-')[1],
     });
@@ -133,7 +159,7 @@ function saveTasks() {
 function loadTasks() {
   const savedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
   savedTasks.forEach(task => {
-    const taskItem = createTaskElement(task.text, task.priority);
+    const taskItem = createTaskElement(task.text, task.priority, task.dueDate);
     if (task.completed) {
       taskItem.classList.add('complete');
       taskItem.querySelector('.task-checkbox').checked = true;
